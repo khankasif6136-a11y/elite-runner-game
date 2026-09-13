@@ -3,23 +3,41 @@ name: Build Android APK
 on:
   workflow_dispatch:
 
+env:
+  PYTHONFORANDROID_PREREQUISITES_INSTALL_INTERACTIVE: 0
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: 1.5.0
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y automake libltdl-dev
+          python -m pip install --upgrade pip
+          python -m pip install buildozer
+
+      - name: Build APK
+        run: |
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: elite-runner-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
